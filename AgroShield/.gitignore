@@ -26,3 +26,6 @@ dataset1/
 # 9. Старые и тестовые версии бота
 app1.py
 app245.py
+
+terminator.py
+converter.py
