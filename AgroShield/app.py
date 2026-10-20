@@ -15,7 +15,6 @@ from aiogram.types import FSInputFile
 from dotenv import load_dotenv
 from pillow_heif import register_heif_opener
 
-# Импорт из базы данных
 from database import (
     init_db, register_enterprise, get_enterprise_by_code, bind_user,
     get_user_enterprise, get_dispatcher_chat, save_diagnostic,
@@ -25,7 +24,6 @@ from database import (
     export_to_csv_async, generate_heatmap_from_db
 )
 
-# Настраиваем логирование
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -41,7 +39,6 @@ CLASS_NAMES = [
     "Позднее увядание(Фитофтороз)"
 ]
 
-# Загружаем модель один раз при старте
 try:
     model_potato = tf.keras.models.load_model('agroshield_m.keras')
 except Exception as e:
@@ -49,8 +46,6 @@ except Exception as e:
 
 bot = Bot(TOKEN)
 dp = Dispatcher()
-
-# ОБРАБОТКА ДАННЫХ И ИНФЕРЕНС НЕЙРОСЕТИ
 
 def dms_to_decimal(dms, reference):
 
