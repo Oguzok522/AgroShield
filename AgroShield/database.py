@@ -14,10 +14,7 @@ def clean_name(text):
     return re.sub(r'[^\w\-]', '_', text)
 
 async def init_db():
-    """
-    Инициализация реляционной БД.
-    Реализована мягкая миграция (try-except) для столбца status без потери старых данных.
-    """
+
     async with aiosqlite.connect(DB_FILE) as db:
         await db.execute('''
             CREATE TABLE IF NOT EXISTS diagnostics (
@@ -32,13 +29,11 @@ async def init_db():
                 status TEXT DEFAULT 'active'
             )
         ''')
-        # Мягкая миграция БД
         try:
             await db.execute("ALTER TABLE diagnostics ADD COLUMN status TEXT DEFAULT 'active'")
         except aiosqlite.OperationalError:
             pass
 
-        # Архитектура Multi-tenancy (Мультиарендность)
         await db.execute('''
             CREATE TABLE IF NOT EXISTS enterprises (
                 name TEXT PRIMARY KEY,
@@ -55,14 +50,14 @@ async def init_db():
         await db.commit()
 
 async def register_enterprise(name, code, chat_id):
-    """Идемпотентное сохранение предприятия с защитой от SQL-инъекций (?,?,?)"""
+
     async with aiosqlite.connect(DB_FILE) as db:
         await db.execute('INSERT OR REPLACE INTO enterprises (name, invite_code, chat_id) VALUES (?, ?, ?)',
                          (name, code, chat_id))
         await db.commit()
 
 async def get_enterprise_by_code(code):
-    """Поиск предприятия по коду с использованием безопасного извлечения (тернарный оператор)"""
+
     async with aiosqlite.connect(DB_FILE) as db:
         async with db.execute('SELECT name FROM enterprises WHERE invite_code = ?', (code,)) as cursor:
             res = await cursor.fetchone()
@@ -86,7 +81,7 @@ async def get_dispatcher_chat(enterprise):
             return res[0] if res else None
 
 async def save_diagnostic(user_id, enterprise, diagnosis, confidence, coordinates):
-    """Сохранение инцидента с автоматическим присвоением статуса 'active'"""
+
     lat = coordinates[0] if coordinates else None
     lon = coordinates[1] if coordinates else None
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -98,10 +93,7 @@ async def save_diagnostic(user_id, enterprise, diagnosis, confidence, coordinate
         await db.commit()
 
 async def get_today_active_diagnostics(enterprise_name):
-    """
-    ОПЕРАТИВНАЯ СВОДКА: Гибридная фильтрация данных (SQL WHERE + Python timedelta).
-    Возвращает очаги строго за последние 24 часа для планирования текущего дня.
-    """
+
     async with aiosqlite.connect(DB_FILE) as db:
         async with db.execute(
             """
@@ -213,11 +205,7 @@ async def export_to_csv_async(enterprise_name, period="all"):
     return filename
 
 def generate_heatmap_from_db(enterprise_name):
-    """
-    СТРАТЕГИЧЕСКАЯ ТЕПЛОВАЯ КАРТА:
-    Строится по принципу Soft Delete. Агрегирует ВСЕ инциденты со статусом 'active',
-    независимо от времени обнаружения, пока агроном не подтвердит обработку поля.
-    """
+
     center_lat, center_lon = 53.8058, 27.5255
     alt_coords, phyto_coords, markers_data = [], [], []
     last_point = None
@@ -253,10 +241,17 @@ def generate_heatmap_from_db(enterprise_name):
 
     for lat, lon, diag in markers_data:
         point_color = "yellow" if "Альтернариоз" in diag else "red"
+        popup_html = (
+            f"<b>{diag}</b><br>"
+            f"Координаты: {lat}, {lon}<br><br>"
+            f"<a href='https://www.google.com/maps?q={lat},{lon}' target='_blank'>"
+            f"📍 Открыть в Google Maps</a>"
+        )
+
         folium.CircleMarker(
             location=[lat, lon], radius=5, weight=1, color=point_color,
             fill=True, fill_color=point_color, fill_opacity=0.6,
-            popup=f"<b>{diag}</b><br>Координаты: {lat}, {lon}",
+            popup=popup_html,
             tooltip=f"<b>{diag}</b><br>📍 {lat}, {lon}"
         ).add_to(base_map)
 
