@@ -32,7 +32,7 @@ handler.setFormatter(colorlog.ColoredFormatter(
     log_colors={
         'DEBUG': 'cyan',
         'INFO': 'green',
-        'WARNING': 'yellow',
+        'WARNING': 'red',
         'ERROR': 'red',
         'CRITICAL': 'bold_red',
     }
