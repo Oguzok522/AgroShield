@@ -34,7 +34,7 @@ handler.setFormatter(colorlog.ColoredFormatter(
         'INFO': 'green',
         'WARNING': 'red',
         'ERROR': 'red',
-        'CRITICAL': 'bold_red',
+        'CRITICAL': 'red',
     }
 ))
 
